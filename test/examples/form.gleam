@@ -1,11 +1,3 @@
-# validated
-
-Easily accumulate validation errors in Gleam!
-
-[![Package Version](https://img.shields.io/hexpm/v/validated)](https://hex.pm/packages/validated)
-[![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/validated/)
-
-```gleam
 import gleam/string
 import validated.{type Validated}
 import validated as v
@@ -52,13 +44,34 @@ pub fn main() {
     "you must be 18 or older",
   ]) = valid_form("lucy", 1)
 }
-```
 
-Further documentation can be found at <https://hexdocs.pm/validated>.
+fn is_something(a: String) -> Bool {
+  todo
+}
 
-## Development
+fn wrap(a: Result(String, String)) {
+  todo
+}
 
-```sh
-gleam run   # Run the project
-gleam test  # Run the tests
-```
+fn thing1(a: String) {
+  case is_something(a) {
+    True -> Ok(a)
+    False -> Error("bad")
+  }
+  |> wrap
+}
+
+fn thing2(a: String) {
+  wrap(case is_something(a) {
+    True -> Ok(a)
+    False -> Error("bad")
+  })
+}
+
+fn thing3(a: String) {
+  let result = case is_something(a) {
+    True -> Ok(a)
+    False -> Error("bad")
+  }
+  wrap(result)
+}
