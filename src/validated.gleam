@@ -29,7 +29,7 @@ pub fn is_invalid(validated: Validated(a, e)) -> Bool {
   }
 }
 
-pub fn field(
+pub fn try(
   validated: Validated(a, e),
   next: fn(a) -> Validated(b, e),
 ) -> Validated(b, e) {

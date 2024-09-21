@@ -69,11 +69,11 @@ fn do_validate_form(
   last_name: String,
   age: Int,
 ) -> Validated(Form, String) {
-  use username <- v.field(validate_username(username))
-  use password <- v.field(validate_password(password))
-  use first_name <- v.field(validate_first_name(first_name))
-  use last_name <- v.field(validate_last_name(last_name))
-  use age <- v.field(validate_age(age))
+  use username <- v.try(validate_username(username))
+  use password <- v.try(validate_password(password))
+  use first_name <- v.try(validate_first_name(first_name))
+  use last_name <- v.try(validate_last_name(last_name))
+  use age <- v.try(validate_age(age))
   v.valid(Form(username:, password:, first_name:, last_name:, age:))
 }
 

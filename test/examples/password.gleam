@@ -60,12 +60,12 @@ fn validate_password(password: String) -> Result(String, List(String)) {
 }
 
 fn do_validate_password(password: String) -> Validated(String, String) {
-  use _ <- v.field(min_length(password, 10))
-  use _ <- v.field(max_length(password, 28))
-  use _ <- v.field(must_not_contain(password, " "))
-  use _ <- v.field(contains_number(password))
-  use _ <- v.field(contains_capital_letter(password))
-  use _ <- v.field(contains_lowercase_letter(password))
+  use _ <- v.try(min_length(password, 10))
+  use _ <- v.try(max_length(password, 28))
+  use _ <- v.try(must_not_contain(password, " "))
+  use _ <- v.try(contains_number(password))
+  use _ <- v.try(contains_capital_letter(password))
+  use _ <- v.try(contains_lowercase_letter(password))
   v.valid(password)
 }
 

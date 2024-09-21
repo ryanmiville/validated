@@ -16,9 +16,9 @@ fn user_decoder(data: Dynamic) -> Result(User, DecodeErrors) {
 }
 
 fn validate_user(data: Dynamic) -> Validated(User, DecodeErrors) {
-  use name <- v.field(v.string(dynamic.field("name", dynamic.string)(data)))
-  use email <- v.field(v.string(dynamic.field("email", dynamic.string)(data)))
-  use is_admin <- v.field(v.bool(dynamic.field("is-admin", dynamic.bool)(data)))
+  use name <- v.try(v.string(dynamic.field("name", dynamic.string)(data)))
+  use email <- v.try(v.string(dynamic.field("email", dynamic.string)(data)))
+  use is_admin <- v.try(v.bool(dynamic.field("is-admin", dynamic.bool)(data)))
   v.valid(User(name:, email:, is_admin:))
 }
 

@@ -107,20 +107,20 @@ pub fn try_map_test() {
 
 pub fn continue_test() {
   let valid_tuple = {
-    use a <- v.field(v.valid(1))
-    use b <- v.field(v.valid("hello"))
+    use a <- v.try(v.valid(1))
+    use b <- v.try(v.valid("hello"))
     v.valid(#(a, b))
   }
 
   let invalid_tuple = {
-    use a <- v.field(v.int(Error("oops")))
-    use b <- v.field(v.valid("hello"))
+    use a <- v.try(v.int(Error("oops")))
+    use b <- v.try(v.valid("hello"))
     v.valid(#(a, b))
   }
 
   let cont = fn(tuple) {
-    use tuple <- v.field(tuple)
-    use bool <- v.field(v.valid(True))
+    use tuple <- v.try(tuple)
+    use bool <- v.try(v.valid(True))
     v.valid(#(tuple, bool))
   }
 
