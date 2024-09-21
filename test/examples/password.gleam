@@ -4,6 +4,34 @@ import gleam/string
 import validated.{type Validated}
 import validated as v
 
+fn validate_password(password: String) -> Result(String, List(String)) {
+  password
+  |> do_validate_password
+  |> v.to_result
+}
+
+fn do_validate_password(password: String) -> Validated(String, String) {
+  use _ <- v.try(min_length(password, 10))
+  use _ <- v.try(max_length(password, 28))
+  use _ <- v.try(must_not_contain(password, " "))
+  use _ <- v.try(contains_number(password))
+  use _ <- v.try(contains_capital_letter(password))
+  use _ <- v.try(contains_lowercase_letter(password))
+  use _ <- v.try(contains_symbol(password))
+  v.valid(password)
+}
+
+pub fn main() {
+  let assert Ok(_) = validate_password("Passw0r$1234")
+
+  let assert Error([
+    "does not meet minimum length of 10",
+    "must contain a number",
+    "must contain a capital letter",
+    "must contain a symbol",
+  ]) = validate_password("password")
+}
+
 fn min_length(s: String, min: Int) -> Validated(String, String) {
   case string.length(s) {
     len if len >= min -> Ok(s)
@@ -40,6 +68,10 @@ fn contains_lowercase_letter(s: String) -> Validated(String, String) {
   match(s, ".*[a-z].*", "must contain a lowercase letter")
 }
 
+fn contains_symbol(s: String) -> Validated(String, String) {
+  match(s, ".*\\W+.*", "must contain a symbol")
+}
+
 fn match(
   s: String,
   pattern: String,
@@ -51,30 +83,4 @@ fn match(
     False -> Error(error_message)
   }
   |> v.string
-}
-
-fn validate_password(password: String) -> Result(String, List(String)) {
-  password
-  |> do_validate_password
-  |> v.to_result
-}
-
-fn do_validate_password(password: String) -> Validated(String, String) {
-  use _ <- v.try(min_length(password, 10))
-  use _ <- v.try(max_length(password, 28))
-  use _ <- v.try(must_not_contain(password, " "))
-  use _ <- v.try(contains_number(password))
-  use _ <- v.try(contains_capital_letter(password))
-  use _ <- v.try(contains_lowercase_letter(password))
-  v.valid(password)
-}
-
-pub fn main() {
-  let assert Ok(_) = validate_password("Passw0r$1234")
-
-  let assert Error([
-    "does not meet minimum length of 10",
-    "must contain a number",
-    "must contain a capital letter",
-  ]) = validate_password("password")
 }
