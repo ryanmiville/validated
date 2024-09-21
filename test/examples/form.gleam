@@ -44,34 +44,3 @@ pub fn main() {
     "you must be 18 or older",
   ]) = valid_form("lucy", 1)
 }
-
-fn is_something(a: String) -> Bool {
-  todo
-}
-
-fn wrap(a: Result(String, String)) {
-  todo
-}
-
-fn thing1(a: String) {
-  case is_something(a) {
-    True -> Ok(a)
-    False -> Error("bad")
-  }
-  |> wrap
-}
-
-fn thing2(a: String) {
-  wrap(case is_something(a) {
-    True -> Ok(a)
-    False -> Error("bad")
-  })
-}
-
-fn thing3(a: String) {
-  let result = case is_something(a) {
-    True -> Ok(a)
-    False -> Error("bad")
-  }
-  wrap(result)
-}

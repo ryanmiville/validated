@@ -22,16 +22,6 @@ fn validate_user(data: Dynamic) -> Validated(User, DecodeErrors) {
   v.valid(User(name:, email:, is_admin:))
 }
 
-fn user_data(name: a, email: b, is_admin: c) {
-  dynamic.from(
-    dict.from_list([
-      #("name", dynamic.from(name)),
-      #("email", dynamic.from(email)),
-      #("is-admin", dynamic.from(is_admin)),
-    ]),
-  )
-}
-
 pub fn main() {
   let data = user_data("Lucy", "lucy@example.com", True)
   let assert Ok(_) = user_decoder(data)
@@ -44,4 +34,14 @@ pub fn main() {
 
   let data = user_data(100, 100, 100)
   let assert Error([_error1, _error2, _error3]) = user_decoder(data)
+}
+
+fn user_data(name: a, email: b, is_admin: c) {
+  dynamic.from(
+    dict.from_list([
+      #("name", dynamic.from(name)),
+      #("email", dynamic.from(email)),
+      #("is-admin", dynamic.from(is_admin)),
+    ]),
+  )
 }
