@@ -2,23 +2,19 @@ import gleam/int
 import gleam/regex
 import gleam/string
 import validated.{type Validated}
-import validated as v
 
 fn validate_password(password: String) -> Result(String, List(String)) {
-  password
-  |> do_validate_password
-  |> v.to_result
-}
-
-fn do_validate_password(password: String) -> Validated(String, String) {
-  use _ <- v.try(min_length(password, 10))
-  use _ <- v.try(max_length(password, 28))
-  use _ <- v.try(must_not_contain(password, " "))
-  use _ <- v.try(contains_number(password))
-  use _ <- v.try(contains_capital_letter(password))
-  use _ <- v.try(contains_lowercase_letter(password))
-  use _ <- v.try(contains_symbol(password))
-  v.valid(password)
+  [
+    min_length(_, 10),
+    max_length(_, 28),
+    must_not_contain(_, " "),
+    contains_number,
+    contains_capital_letter,
+    contains_lowercase_letter,
+    contains_symbol,
+  ]
+  |> validated.run_all(password)
+  |> validated.to_result
 }
 
 pub fn main() {
@@ -37,7 +33,7 @@ fn min_length(s: String, min: Int) -> Validated(String, String) {
     len if len >= min -> Ok(s)
     _ -> Error("does not meet minimum length of " <> int.to_string(min))
   }
-  |> v.string
+  |> validated.string
 }
 
 fn max_length(s: String, max: Int) -> Validated(String, String) {
@@ -45,7 +41,7 @@ fn max_length(s: String, max: Int) -> Validated(String, String) {
     len if len <= max -> Ok(s)
     _ -> Error("exceeds maximum length of " <> int.to_string(max))
   }
-  |> v.string
+  |> validated.string
 }
 
 fn must_not_contain(s: String, sub: String) -> Validated(String, String) {
@@ -53,7 +49,7 @@ fn must_not_contain(s: String, sub: String) -> Validated(String, String) {
     True -> Error("must not contain " <> sub)
     False -> Ok(s)
   }
-  |> v.string
+  |> validated.string
 }
 
 fn contains_number(s: String) -> Validated(String, String) {
@@ -82,5 +78,5 @@ fn match(
     True -> Ok(s)
     False -> Error(error_message)
   }
-  |> v.string
+  |> validated.string
 }

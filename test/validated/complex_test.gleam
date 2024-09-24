@@ -78,47 +78,35 @@ fn do_validate_form(
 }
 
 fn validate_username(username: String) -> Validated(String, String) {
-  let assert Ok(re) = regex.from_string("^[a-zA-Z0-9]+$")
-  case regex.check(re, username) {
-    True -> Ok(username)
-    False -> Error("Username cannot contain special characters.")
-  }
-  |> v.string
+  match(
+    username,
+    "^[a-zA-Z0-9]+$",
+    "Username cannot contain special characters.",
+  )
 }
 
 fn validate_password(password: String) -> Validated(String, String) {
-  let assert Ok(re) =
-    regex.from_string(
-      "(?=^.{10,}$)((?=.*\\d)|(?=.*\\W+))(?![.\\n])(?=.*[A-Z])(?=.*[a-z]).*$",
-    )
-  case regex.check(re, password) {
-    True -> Ok(password)
-    False ->
-      Error(
-        "Password must be at least 10 characters long, including an uppercase and a lowercase letter, one number and one special character.",
-      )
-  }
-  |> v.string
+  match(
+    password,
+    "(?=^.{10,}$)((?=.*\\d)|(?=.*\\W+))(?![.\\n])(?=.*[A-Z])(?=.*[a-z]).*$",
+    "Password must be at least 10 characters long, including an uppercase and a lowercase letter, one number and one special character.",
+  )
 }
 
 fn validate_first_name(first_name: String) -> Validated(String, String) {
-  let assert Ok(re) = regex.from_string("^[a-zA-Z]+$")
-  case regex.check(re, first_name) {
-    True -> Ok(first_name)
-    False ->
-      Error("First name cannot contain spaces, numbers or special characters.")
-  }
-  |> v.string
+  match(
+    first_name,
+    "^[a-zA-Z]+$",
+    "Last name cannot contain spaces, numbers or special characters.",
+  )
 }
 
 fn validate_last_name(last_name: String) -> Validated(String, String) {
-  let assert Ok(re) = regex.from_string("^[a-zA-Z]+$")
-  case regex.check(re, last_name) {
-    True -> Ok(last_name)
-    False ->
-      Error("Last name cannot contain spaces, numbers or special characters.")
-  }
-  |> v.string
+  match(
+    last_name,
+    "^[a-zA-Z]+$",
+    "Last name cannot contain spaces, numbers or special characters.",
+  )
 }
 
 fn validate_age(age: Int) -> Validated(Int, String) {
@@ -127,4 +115,17 @@ fn validate_age(age: Int) -> Validated(Int, String) {
     _ -> Error("You must be aged 18 and not older than 75 to use our services.")
   }
   |> v.int
+}
+
+fn match(
+  s: String,
+  pattern: String,
+  error_message: String,
+) -> Validated(String, String) {
+  let assert Ok(re) = regex.from_string(pattern)
+  case regex.check(re, s) {
+    True -> Ok(s)
+    False -> Error(error_message)
+  }
+  |> validated.string
 }

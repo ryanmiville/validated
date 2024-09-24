@@ -1,8 +1,10 @@
 import gleam/dict
 import gleam/int
 import gleam/option.{None, Some}
+import gleam/string
 import gleeunit
 import gleeunit/should
+import validated.{type Validator}
 import validated as v
 
 pub fn main() {
@@ -105,7 +107,7 @@ pub fn try_map_test() {
   |> should.equal(v.invalid(0, ["oops"]))
 }
 
-pub fn continue_test() {
+pub fn try_test() {
   let valid_tuple = {
     use a <- v.try(v.valid(1))
     use b <- v.try(v.valid("hello"))
@@ -131,4 +133,55 @@ pub fn continue_test() {
   cont(invalid_tuple)
   |> v.to_result
   |> should.equal(Error(["oops"]))
+}
+
+fn validator(
+  cond: fn(in) -> Bool,
+  true: out,
+  false: error,
+) -> Validator(in, out, error) {
+  fn(in) {
+    case cond(in) {
+      True -> v.valid(true)
+      False -> v.invalid(true, [false])
+    }
+  }
+}
+
+pub fn run_test() {
+  let val = validator(string.contains(_, "ok"), Nil, "there's a problem")
+
+  val
+  |> v.run("this is ok")
+  |> v.to_result
+  |> should.equal(Ok(Nil))
+
+  val
+  |> v.run("oops")
+  |> v.to_result
+  |> should.equal(Error(["there's a problem"]))
+}
+
+pub fn run_all_test() {
+  let min_length =
+    validator(
+      fn(in) { string.length(in) >= 8 },
+      Nil,
+      "must be at least 8 characters",
+    )
+
+  let no_spaces =
+    validator(fn(in) { !string.contains(in, " ") }, Nil, "no spaces allowed")
+
+  let vals = [min_length, no_spaces]
+
+  vals
+  |> v.run_all("asdfjkl;")
+  |> v.to_result
+  |> should.equal(Ok(Nil))
+
+  vals
+  |> v.run_all("hey joe")
+  |> v.to_result
+  |> should.equal(Error(["must be at least 8 characters", "no spaces allowed"]))
 }

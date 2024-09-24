@@ -3,9 +3,12 @@ import gleam/list
 import gleam/option.{type Option, None}
 import gleam/result
 
-pub opaque type Validated(a, e) {
+pub type Validated(a, e) {
   Validated(default: a, result: Result(a, List(e)))
 }
+
+pub type Validator(in, out, error) =
+  fn(in) -> Validated(out, error)
 
 pub fn valid(value: a) -> Validated(a, e) {
   Validated(value, Ok(value))
@@ -24,8 +27,8 @@ pub fn is_valid(validated: Validated(a, e)) -> Bool {
 
 pub fn is_invalid(validated: Validated(a, e)) -> Bool {
   case validated.result {
-    Ok(_) -> False
-    _ -> True
+    Error(_) -> True
+    _ -> False
   }
 }
 
@@ -35,50 +38,44 @@ pub fn try(
 ) -> Validated(b, e) {
   case validated.result {
     Ok(a) -> next(a)
-    Error(e1) -> {
-      case next(validated.default) {
-        Validated(_, Ok(b)) -> invalid(b, e1)
-        Validated(next_default, Error(e2)) ->
-          invalid(next_default, list.append(e1, e2))
-      }
-    }
+    _ -> combine(validated, next(validated.default))
   }
 }
 
-pub fn int(result: Result(Int, e)) -> Validated(Int, e) {
-  from_result(result, 0)
+pub fn int(value: Result(Int, e)) -> Validated(Int, e) {
+  result(value, 0)
 }
 
-pub fn string(result: Result(String, e)) -> Validated(String, e) {
-  from_result(result, "")
+pub fn string(value: Result(String, e)) -> Validated(String, e) {
+  result(value, "")
 }
 
-pub fn float(result: Result(Float, e)) -> Validated(Float, e) {
-  from_result(result, 0.0)
+pub fn float(value: Result(Float, e)) -> Validated(Float, e) {
+  result(value, 0.0)
 }
 
-pub fn bool(result: Result(Bool, e)) -> Validated(Bool, e) {
-  from_result(result, False)
+pub fn bool(value: Result(Bool, e)) -> Validated(Bool, e) {
+  result(value, False)
 }
 
-pub fn list(result: Result(List(a), e)) -> Validated(List(a), e) {
-  from_result(result, [])
+pub fn list(value: Result(List(a), e)) -> Validated(List(a), e) {
+  result(value, [])
 }
 
-pub fn bit_array(result: Result(BitArray, e)) -> Validated(BitArray, e) {
-  from_result(result, <<>>)
+pub fn bit_array(value: Result(BitArray, e)) -> Validated(BitArray, e) {
+  result(value, <<>>)
 }
 
-pub fn optional(result: Result(Option(a), e)) -> Validated(Option(a), e) {
-  from_result(result, None)
+pub fn optional(value: Result(Option(a), e)) -> Validated(Option(a), e) {
+  result(value, None)
 }
 
-pub fn dict(result: Result(Dict(k, v), e)) -> Validated(Dict(k, v), e) {
-  from_result(result, dict.new())
+pub fn dict(value: Result(Dict(k, v), e)) -> Validated(Dict(k, v), e) {
+  result(value, dict.new())
 }
 
-pub fn from_result(result: Result(a, e), default: a) -> Validated(a, e) {
-  Validated(result.unwrap(result, default), result.map_error(result, list.wrap))
+pub fn result(value: Result(a, e), default: a) -> Validated(a, e) {
+  Validated(result.unwrap(value, default), result.map_error(value, list.wrap))
 }
 
 pub fn to_result(validated: Validated(a, e)) -> Result(a, List(e)) {
@@ -104,5 +101,42 @@ pub fn try_map(
         Error(e) -> invalid(default, [e])
       }
     Error(e) -> invalid(default, e)
+  }
+}
+
+pub fn combine(v1: Validated(a, e), v2: Validated(b, e)) -> Validated(b, e) {
+  case v1.result, v2.result {
+    Ok(_), _ -> v2
+    Error(e), Ok(b) -> invalid(b, e)
+    Error(e1), Error(e2) -> invalid(v2.default, list.append(e1, e2))
+  }
+}
+
+pub fn combine_all(vs: List(Validated(a, e)), default: a) -> Validated(a, e) {
+  list.fold(vs, valid(default), combine)
+}
+
+pub fn unwrap(validated: Validated(a, e)) -> a {
+  case validated {
+    Validated(_, Ok(a)) -> a
+    Validated(a, _) -> a
+  }
+}
+
+pub fn run(
+  validator: Validator(in, out, error),
+  input: in,
+) -> Validated(out, error) {
+  validator(input)
+}
+
+pub fn run_all(
+  validators: List(Validator(in, out, error)),
+  input: in,
+) -> Validated(out, error) {
+  let f = fn(acc, v) { combine(acc, v(input)) }
+  case validators {
+    [head, ..rest] -> list.fold(rest, head(input), f)
+    [] -> panic as "list cannot be empty"
   }
 }
