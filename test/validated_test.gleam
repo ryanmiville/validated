@@ -4,7 +4,7 @@ import gleam/option.{None, Some}
 import gleam/string
 import gleeunit
 import gleeunit/should
-import validated.{type Validator}
+import validated.{type Validator, Invalid, Valid}
 import validated as v
 
 pub fn main() {
@@ -13,76 +13,76 @@ pub fn main() {
 
 pub fn int_test() {
   v.int(Ok(1))
-  |> should.equal(v.valid(1))
+  |> should.equal(Valid(1))
 
   v.int(Error("oops"))
-  |> should.equal(v.invalid(0, ["oops"]))
+  |> should.equal(Invalid(0, ["oops"]))
 }
 
 pub fn float_test() {
   v.float(Ok(1.0))
-  |> should.equal(v.valid(1.0))
+  |> should.equal(Valid(1.0))
 
   v.float(Error("oops"))
-  |> should.equal(v.invalid(0.0, ["oops"]))
+  |> should.equal(Invalid(0.0, ["oops"]))
 }
 
 pub fn string_test() {
   v.string(Ok("hello"))
-  |> should.equal(v.valid("hello"))
+  |> should.equal(Valid("hello"))
 
   v.string(Error("oops"))
-  |> should.equal(v.invalid("", ["oops"]))
+  |> should.equal(Invalid("", ["oops"]))
 }
 
 pub fn bool_test() {
   v.bool(Ok(True))
-  |> should.equal(v.valid(True))
+  |> should.equal(Valid(True))
 
   v.bool(Error("oops"))
-  |> should.equal(v.invalid(False, ["oops"]))
+  |> should.equal(Invalid(False, ["oops"]))
 }
 
 pub fn list_test() {
   v.list(Ok([1, 2]))
-  |> should.equal(v.valid([1, 2]))
+  |> should.equal(Valid([1, 2]))
 
   v.list(Error("oops"))
-  |> should.equal(v.invalid([], ["oops"]))
+  |> should.equal(Invalid([], ["oops"]))
 }
 
 pub fn optional_test() {
   v.optional(Ok(Some("hi")))
-  |> should.equal(v.valid(Some("hi")))
+  |> should.equal(Valid(Some("hi")))
 
   v.optional(Error("oops"))
-  |> should.equal(v.invalid(None, ["oops"]))
+  |> should.equal(Invalid(None, ["oops"]))
 }
 
 pub fn bit_array_test() {
   v.bit_array(Ok(<<"hello":utf8>>))
-  |> should.equal(v.valid(<<"hello":utf8>>))
+  |> should.equal(Valid(<<"hello":utf8>>))
 
   v.bit_array(Error("oops"))
-  |> should.equal(v.invalid(<<>>, ["oops"]))
+  |> should.equal(Invalid(<<>>, ["oops"]))
 }
 
 pub fn dict_test() {
   v.dict(Ok(dict.from_list([#("hello", "world")])))
-  |> should.equal(v.valid(dict.from_list([#("hello", "world")])))
+  |> should.equal(Valid(dict.from_list([#("hello", "world")])))
 
   v.dict(Error("oops"))
-  |> should.equal(v.invalid(dict.new(), ["oops"]))
+  |> should.equal(Invalid(dict.new(), ["oops"]))
 }
 
 pub fn map_test() {
-  v.valid(1)
+  Valid(1)
   |> v.map(fn(a) { a + 1 })
-  |> should.equal(v.valid(2))
+  |> should.equal(Valid(2))
 
-  v.invalid(0, ["oops"])
+  Invalid(0, ["oops"])
   |> v.map(fn(a) { a + 1 })
-  |> should.equal(v.invalid(1, ["oops"]))
+  |> should.equal(Invalid(1, ["oops"]))
   // it runs against the default
 }
 
@@ -94,36 +94,36 @@ pub fn try_map_test() {
     }
   }
 
-  v.valid("1")
+  Valid("1")
   |> v.try_map(0, parse)
-  |> should.equal(v.valid(1))
+  |> should.equal(Valid(1))
 
-  v.valid("one")
+  Valid("one")
   |> v.try_map(0, parse)
-  |> should.equal(v.invalid(0, ["NaN"]))
+  |> should.equal(Invalid(0, ["NaN"]))
 
-  v.invalid("", ["oops"])
+  Invalid("", ["oops"])
   |> v.try_map(0, parse)
-  |> should.equal(v.invalid(0, ["oops"]))
+  |> should.equal(Invalid(0, ["oops"]))
 }
 
 pub fn try_test() {
   let valid_tuple = {
-    use a <- v.try(v.valid(1))
-    use b <- v.try(v.valid("hello"))
-    v.valid(#(a, b))
+    use a <- v.try(Valid(1))
+    use b <- v.try(Valid("hello"))
+    Valid(#(a, b))
   }
 
   let invalid_tuple = {
     use a <- v.try(v.int(Error("oops")))
-    use b <- v.try(v.valid("hello"))
-    v.valid(#(a, b))
+    use b <- v.try(Valid("hello"))
+    Valid(#(a, b))
   }
 
   let cont = fn(tuple) {
     use tuple <- v.try(tuple)
-    use bool <- v.try(v.valid(True))
-    v.valid(#(tuple, bool))
+    use bool <- v.try(Valid(True))
+    Valid(#(tuple, bool))
   }
 
   cont(valid_tuple)
@@ -142,8 +142,8 @@ fn validator(
 ) -> Validator(in, out, error) {
   fn(in) {
     case cond(in) {
-      True -> v.valid(true)
-      False -> v.invalid(true, [false])
+      True -> Valid(true)
+      False -> Invalid(true, [false])
     }
   }
 }

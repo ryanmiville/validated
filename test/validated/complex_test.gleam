@@ -1,7 +1,7 @@
 import gleam/regex
 import gleeunit
 import gleeunit/should
-import validated.{type Validated}
+import validated.{type Validated, Valid}
 import validated as v
 
 pub fn main() {
@@ -74,7 +74,7 @@ fn do_validate_form(
   use first_name <- v.try(validate_first_name(first_name))
   use last_name <- v.try(validate_last_name(last_name))
   use age <- v.try(validate_age(age))
-  v.valid(Form(username:, password:, first_name:, last_name:, age:))
+  Valid(Form(username:, password:, first_name:, last_name:, age:))
 }
 
 fn validate_username(username: String) -> Validated(String, String) {

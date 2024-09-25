@@ -1,33 +1,25 @@
 import gleam/dict.{type Dict}
 import gleam/list
 import gleam/option.{type Option, None}
-import gleam/result
 
 pub type Validated(a, e) {
-  Validated(default: a, result: Result(a, List(e)))
+  Valid(a)
+  Invalid(a, List(e))
 }
 
 pub type Validator(in, out, error) =
   fn(in) -> Validated(out, error)
 
-pub fn valid(value: a) -> Validated(a, e) {
-  Validated(value, Ok(value))
-}
-
-pub fn invalid(default: a, errors: List(e)) -> Validated(a, e) {
-  Validated(default, Error(errors))
-}
-
 pub fn is_valid(validated: Validated(a, e)) -> Bool {
-  case validated.result {
-    Ok(_) -> True
+  case validated {
+    Valid(_) -> True
     _ -> False
   }
 }
 
 pub fn is_invalid(validated: Validated(a, e)) -> Bool {
-  case validated.result {
-    Error(_) -> True
+  case validated {
+    Invalid(..) -> True
     _ -> False
   }
 }
@@ -36,9 +28,9 @@ pub fn try(
   validated: Validated(a, e),
   next: fn(a) -> Validated(b, e),
 ) -> Validated(b, e) {
-  case validated.result {
-    Ok(a) -> next(a)
-    _ -> combine(validated, next(validated.default))
+  case validated {
+    Valid(a) -> next(a)
+    Invalid(default, _) -> combine(validated, next(default))
   }
 }
 
@@ -75,17 +67,23 @@ pub fn dict(value: Result(Dict(k, v), e)) -> Validated(Dict(k, v), e) {
 }
 
 pub fn result(value: Result(a, e), default: a) -> Validated(a, e) {
-  Validated(result.unwrap(value, default), result.map_error(value, list.wrap))
+  case value {
+    Ok(a) -> Valid(a)
+    Error(e) -> Invalid(default, [e])
+  }
 }
 
 pub fn to_result(validated: Validated(a, e)) -> Result(a, List(e)) {
-  validated.result
+  case validated {
+    Valid(a) -> Ok(a)
+    Invalid(_, errors) -> Error(errors)
+  }
 }
 
 pub fn map(validated: Validated(a, e), f: fn(a) -> b) -> Validated(b, e) {
-  case validated.result {
-    Ok(a) -> valid(f(a))
-    Error(e) -> invalid(f(validated.default), e)
+  case validated {
+    Valid(a) -> Valid(f(a))
+    Invalid(default, errors) -> Invalid(f(default), errors)
   }
 }
 
@@ -94,32 +92,33 @@ pub fn try_map(
   default: b,
   f: fn(a) -> Result(b, e),
 ) -> Validated(b, e) {
-  case validated.result {
-    Ok(a) ->
+  case validated {
+    Valid(a) ->
       case f(a) {
-        Ok(b) -> valid(b)
-        Error(e) -> invalid(default, [e])
+        Ok(b) -> Valid(b)
+        Error(e) -> Invalid(default, [e])
       }
-    Error(e) -> invalid(default, e)
+    Invalid(_, errors) -> Invalid(default, errors)
   }
 }
 
 pub fn combine(v1: Validated(a, e), v2: Validated(b, e)) -> Validated(b, e) {
-  case v1.result, v2.result {
-    Ok(_), _ -> v2
-    Error(e), Ok(b) -> invalid(b, e)
-    Error(e1), Error(e2) -> invalid(v2.default, list.append(e1, e2))
+  case v1, v2 {
+    Valid(_), _ -> v2
+    Invalid(_, e), Valid(b) -> Invalid(b, e)
+    Invalid(_, e1), Invalid(default, e2) ->
+      Invalid(default, list.append(e1, e2))
   }
 }
 
 pub fn combine_all(vs: List(Validated(a, e)), default: a) -> Validated(a, e) {
-  list.fold(vs, valid(default), combine)
+  list.fold(vs, Valid(default), combine)
 }
 
 pub fn unwrap(validated: Validated(a, e)) -> a {
   case validated {
-    Validated(_, Ok(a)) -> a
-    Validated(a, _) -> a
+    Valid(a) -> a
+    Invalid(a, _) -> a
   }
 }
 
