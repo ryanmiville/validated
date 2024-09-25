@@ -184,4 +184,9 @@ pub fn run_all_test() {
   |> v.run_all("hey joe")
   |> v.to_result
   |> should.equal(Error(["must be at least 8 characters", "no spaces allowed"]))
+
+  []
+  |> v.run_all("doesn't matter")
+  |> v.to_result
+  |> should.equal(Ok(Nil))
 }

@@ -7,7 +7,7 @@ Easily accumulate validation errors in Gleam!
 
 ```gleam
 import gleam/string
-import validated.{type Validated}
+import validated.{type Validated, Valid}
 import validated as v
 
 pub opaque type Form {
@@ -21,7 +21,7 @@ pub fn valid_form(email: String, age: Int) -> Result(Form, List(String)) {
 fn do_valid_form(email: String, age: Int) -> Validated(Form, String) {
   use email <- v.try(validate_email(email))
   use age <- v.try(validate_age(age))
-  v.valid(Form(email: email, age: email))
+  Valid(Form(email:, age:))
 }
 
 fn validate_email(email: String) -> Validated(String, String) {

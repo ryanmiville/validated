@@ -14,6 +14,7 @@ fn validate_password(password: String) -> Result(String, List(String)) {
     contains_symbol,
   ]
   |> validated.run_all(password)
+  |> validated.replace(password)
   |> validated.to_result
 }
 
