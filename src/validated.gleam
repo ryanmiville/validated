@@ -1,3 +1,29 @@
+//// This module provides the `Validated` type and associated functions
+//// to accumulate errors in an ergonomic way.
+////
+//// ## Example
+//// ```gleam
+//// fn validate_form(email: String, age: Int) -> Validated(Form, String) {
+////   use email <- v.try(validate_email(email))
+////   use age <- v.try(validate_age(age))
+////   Valid(Form(email:, age:))
+//// }
+////
+//// validated_form("lucy@example.com", 20)
+//// // -> Valid(Form("lucy@example.com", 20))
+////
+//// validated_form("asdf", 5)
+//// // -> Invalid(Form("", 0), ["not a valid email", "must be 18 or older"])
+//// ```
+////
+//// This API is possible because a `Validated` requires a "default" value
+//// in case of failure. That way, the default value is passed through to
+//// continue the validation.
+////
+//// Since a value within a validation block may or may not be the default
+//// value, it is important to **never perform side-effects inside the
+//// validation**.
+
 import gleam/dict.{type Dict}
 import gleam/list
 import gleam/option.{type Option, None}
@@ -219,7 +245,8 @@ pub fn run_all(
 }
 
 /// Combines a list of `Validateds` into a single `Validated`.
-/// If all elements in the list are `Valid` then returns an `Valid` holding the list of values.
+/// If all elements in the list are `Valid` then the function returns a `Valid`
+/// holding the list of values.
 /// Otherwise an `Invalid` is returned that combines all the errors.
 /// `Valid([])` is returned if the list is empty.
 pub fn all(validateds: List(Validated(a, e))) -> Validated(List(a), e) {
