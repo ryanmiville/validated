@@ -1,6 +1,6 @@
 # validated
 
-Easily accumulate validation errors in Gleam!
+Easily accumulate errors in Gleam!
 
 [![Package Version](https://img.shields.io/hexpm/v/validated)](https://hex.pm/packages/validated)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/validated/)
