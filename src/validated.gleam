@@ -4,13 +4,17 @@
 //// ## Example
 //// ```gleam
 //// fn validate_form(email: String, age: Int) -> Validated(Form, String) {
-////   use email <- v.try(validate_email(email))
-////   use age <- v.try(validate_age(age))
+////   use email, is_valid <- v.do(validate_email(email))
+////   use email , _ <- v.do_if(is_valid, check_database(email), email)
+////   use age, _ <- v.do(validate_age(age))
 ////   Valid(Form(email:, age:))
 //// }
 ////
 //// validated_form("lucy@example.com", 20)
 //// // -> Valid(Form("lucy@example.com", 20))
+////
+//// validated_form("exists@example.com", 5)
+//// // -> Invalid(Form("", 0), ["email address already exists", "must be 18 or older"])
 ////
 //// validated_form("asdf", 5)
 //// // -> Invalid(Form("", 0), ["not a valid email", "must be 18 or older"])
@@ -58,39 +62,91 @@ pub fn is_invalid(validated: Validated(a, e)) -> Bool {
   }
 }
 
-/// "Updates" a `Valid` value by passing its value to a function that yields a `Validated`,
+/// "Updates" a `Valid` value by passing its value, and a `Bool` indicating whether or not it is valid,
+///  to a function that yields a `Validated`,
 /// and returning the yielded `Validated`. (This may "replace" the `Valid` with an `Invalid`.)
 ///
 /// If the input is an `Invalid` rather than an `Valid`, the function is still called using the default
 /// value from the `Invalid`. If the function succeeds, the `Invalid`'s default is replaced with the `Valid` value.
 /// If the function fails, the first `Invalid` errors are combined with the returned `Invalid` errors.
 ///
-/// This function is useful in `use` expressions to ergonomically validate fields of a record
+/// The `Bool` return value can be used to decide to short circuit further validation. See the `do_if`
+/// function for this use case. If you want to run all the validations regardless, you can ignore this value.
+///
+/// `do` can be used in `use` expressions to ergonomically validate fields of a record
 ///
 /// ## Examples
 ///
 /// ```gleam
-/// use a <- try(Valid(1))
-/// use b <- try(Valid(2))
+/// use a, _ <- do(Valid(1))
+/// use b, _ <- do(Valid(2))
 /// Valid(#(a, b))
 /// // -> Valid(#(1, 2))
 /// ```
 ///
 /// ```gleam
-/// use a <- try(Invalid(0, [Nil]))
-/// use b <- try(Valid(2))
-/// use c <- try(Invalid(0, [Nil]))
+/// use a, _ <- do(Invalid(0, [Nil]))
+/// use b, _ <- do(Valid(2))
+/// use c, _ <- do(Invalid(0, [Nil]))
 /// Valid(#(a, b, c))
 /// // -> Invalid(#(0, 2, 0), [Nil, Nil])
 /// ```
-pub fn try(
+///
+/// ```gleam
+/// use a, is_valid <- do(Invalid(0, [Nil]))
+/// io.debug(is_valid)
+/// // -> False
+/// use b, is_valid <- do(Valid(2))
+/// io.debug(is_valid)
+/// // -> True
+/// use c, is_valid <- do(Invalid(0, [Nil]))
+/// io.debug(is_valid)
+/// // -> False
+/// Valid(#(a, b, c))
+/// // -> Invalid(#(0, 2, 0), [Nil, Nil])
+/// ```
+pub fn do(
   validated: Validated(a, e),
-  next: fn(a) -> Validated(b, e),
+  next: fn(a, Bool) -> Validated(b, e),
 ) -> Validated(b, e) {
   case validated {
-    Valid(a) -> next(a)
-    Invalid(default, _) -> combine(validated, next(default))
+    Valid(a) -> next(a, True)
+    Invalid(default, _) -> combine(validated, next(default, False))
   }
+}
+
+/// Like `do`, but only checks the input `Validated` if the requirements are `True`,
+/// otherwise it will return the provided default value as an `Invalid` with no errors.
+///
+/// This function works well in `use` expressions with `do`.
+///
+/// ## Examples
+///
+/// ```gleam
+/// use a, is_valid <- do(Invalid(0, [Nil]))
+/// use a, _ <- do_if(is_valid, Valid(1), a)
+/// use b, _ <- do(Valid(2))
+/// Valid(#(a, b))
+/// // -> Invalid(#(0, 2), [Nil])
+/// ```
+///
+/// ```gleam
+/// use username, is_valid <- do(meets_requirements(username))
+/// use username, _ <- do_if(is_valid, check_availability(username), username)
+/// use age, _ <- do(Valid(30))
+/// Valid(User(username, age))
+/// ```
+pub fn do_if(
+  when requirements: Bool,
+  do validated: Validated(a, e),
+  otherwise default: a,
+  next next: fn(a, Bool) -> Validated(b, e),
+) -> Validated(b, e) {
+  use a, is_valid <- do(case requirements {
+    True -> validated
+    False -> Invalid(default, [])
+  })
+  next(a, is_valid)
 }
 
 /// Creates a `Validated` from a `Result`.

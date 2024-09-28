@@ -1,3 +1,5 @@
+import gleam/list
+
 import gleam/string
 import validated.{type Validated, Valid}
 import validated as v
@@ -11,8 +13,13 @@ pub fn valid_form(email: String, age: Int) -> Result(Form, List(String)) {
 }
 
 fn do_valid_form(email: String, age: Int) -> Validated(Form, String) {
-  use email <- v.try(validate_email(email))
-  use age <- v.try(validate_age(age))
+  use email, is_valid <- v.do(validate_email(email))
+  use email, _ <- v.do_if(
+    when: is_valid,
+    do: check_db_for_email(email),
+    otherwise: email,
+  )
+  use age, _ <- v.do(validate_age(age))
   Valid(Form(email:, age:))
 }
 
@@ -20,6 +27,15 @@ fn validate_email(email: String) -> Validated(String, String) {
   case string.contains(email, "@") {
     True -> Ok(email)
     False -> Error("email addresses must include '@'")
+  }
+  |> v.string
+}
+
+fn check_db_for_email(email: String) -> Validated(String, String) {
+  let db = ["exists@example.com"]
+  case list.contains(db, email) {
+    True -> Ok(email)
+    False -> Error("email address already exists")
   }
   |> v.string
 }
