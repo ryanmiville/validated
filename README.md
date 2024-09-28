@@ -19,8 +19,8 @@ pub fn valid_form(email: String, age: Int) -> Result(Form, List(String)) {
 }
 
 fn do_valid_form(email: String, age: Int) -> Validated(Form, String) {
-  use email <- v.try(validate_email(email))
-  use age <- v.try(validate_age(age))
+  use email, _ <- v.do(validate_email(email))
+  use age, _ <- v.do(validate_age(age))
   Valid(Form(email:, age:))
 }
 
