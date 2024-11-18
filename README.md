@@ -62,3 +62,15 @@ Further documentation can be found at <https://hexdocs.pm/validated>.
 gleam run   # Run the project
 gleam test  # Run the tests
 ```
+
+```gleam
+let schema = v.object([
+  #("username", validate_username),
+  #("password", validate_password),
+  #("first_name", validate_first_name),
+  #("last_name", validate_last_name),
+  #("age", validate_age),
+])
+
+v.parse(schema, Form(username:, password:, first_name:, last_name:, age:))
+```

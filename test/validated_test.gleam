@@ -1,10 +1,11 @@
+import fixtures/form.{type Form, Form}
 import gleam/dict
 import gleam/int
 import gleam/option.{None, Some}
 import gleam/string
 import gleeunit
 import gleeunit/should
-import validated.{type Validator, Invalid, Valid}
+import validated.{type Validated, type Validator, Invalid, Valid}
 import validated as v
 
 pub fn main() {
@@ -109,20 +110,20 @@ pub fn try_map_test() {
 
 pub fn try_test() {
   let valid_tuple = {
-    use a, _ <- v.do(Valid(1))
-    use b, _ <- v.do(Valid("hello"))
+    use a <- v.do(Valid(1))
+    use b <- v.do(Valid("hello"))
     Valid(#(a, b))
   }
 
   let invalid_tuple = {
-    use a, _ <- v.do(v.int(Error("oops")))
-    use b, _ <- v.do(Valid("hello"))
+    use a <- v.do(v.int(Error("oops")))
+    use b <- v.do(Valid("hello"))
     Valid(#(a, b))
   }
 
   let cont = fn(tuple) {
-    use tuple, _ <- v.do(tuple)
-    use bool, _ <- v.do(Valid(True))
+    use tuple <- v.do(tuple)
+    use bool <- v.do(Valid(True))
     Valid(#(tuple, bool))
   }
 
@@ -189,4 +190,63 @@ pub fn run_all_test() {
   |> v.run_all("doesn't matter")
   |> v.to_result
   |> should.equal(Ok(Nil))
+}
+
+pub fn validate_form_test() {
+  validate_form(
+    username: "Joe",
+    password: "Passw0r$1234",
+    first_name: "John",
+    last_name: "Doe",
+    age: 21,
+  )
+  |> should.equal(
+    Ok(Form(
+      username: "Joe",
+      password: "Passw0r$1234",
+      first_name: "John",
+      last_name: "Doe",
+      age: 21,
+    )),
+  )
+
+  validate_form(
+    username: "Joe%%%",
+    password: "password",
+    first_name: "John",
+    last_name: "Doe",
+    age: 21,
+  )
+  |> should.equal(
+    Error([
+      "Username cannot contain special characters.",
+      "Password must be at least 10 characters long, including an uppercase and a lowercase letter, one number and one special character.",
+    ]),
+  )
+}
+
+pub fn validate_form(
+  username username: String,
+  password password: String,
+  first_name first_name: String,
+  last_name last_name: String,
+  age age: Int,
+) -> Result(Form, List(String)) {
+  do_validate_form(username, password, first_name, last_name, age)
+  |> v.to_result
+}
+
+fn do_validate_form(
+  username: String,
+  password: String,
+  first_name: String,
+  last_name: String,
+  age: Int,
+) -> Validated(Form, String) {
+  use username <- v.do(form.validate_username(username) |> v.string)
+  use password <- v.do(form.validate_password(password) |> v.string)
+  use first_name <- v.do(form.validate_first_name(first_name) |> v.string)
+  use last_name <- v.do(form.validate_last_name(last_name) |> v.string)
+  use age <- v.do(form.validate_age(age) |> v.int)
+  Valid(Form(username:, password:, first_name:, last_name:, age:))
 }
