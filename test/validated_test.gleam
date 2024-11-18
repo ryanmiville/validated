@@ -1,6 +1,5 @@
 import fixtures/form.{type Form, Form}
 import gleam/dict
-import gleam/int
 import gleam/option.{None, Some}
 import gleam/string
 import gleeunit
@@ -85,27 +84,6 @@ pub fn map_test() {
   |> v.map(fn(a) { a + 1 })
   |> should.equal(Invalid(1, ["oops"]))
   // it runs against the default
-}
-
-pub fn try_map_test() {
-  let parse = fn(a) {
-    case int.parse(a) {
-      Ok(a) -> Ok(a)
-      Error(Nil) -> Error("NaN")
-    }
-  }
-
-  Valid("1")
-  |> v.try_map(0, parse)
-  |> should.equal(Valid(1))
-
-  Valid("one")
-  |> v.try_map(0, parse)
-  |> should.equal(Invalid(0, ["NaN"]))
-
-  Invalid("", ["oops"])
-  |> v.try_map(0, parse)
-  |> should.equal(Invalid(0, ["oops"]))
 }
 
 pub fn try_test() {

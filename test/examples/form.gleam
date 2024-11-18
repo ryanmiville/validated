@@ -1,16 +1,15 @@
 // import gleam/list
 
 // import gleam/string
-// import validated/decode_api.{type Validated, Invalid, Valid}
-// import validated/decode_api as v
+// import validated.{type Validated, Invalid, Valid} as v
 
 // pub type Form {
 //   Form(email: String, age: Int)
 // }
 
 // fn new1(email: String, age: Int) -> Validated(Form, String) {
-//   use <- v.do(validate_email(email))
-//   use <- v.do(validate_age(age))
+//   use _ <- v.do(validate_email(email))
+//   use _ <- v.do(validate_age(age))
 //   Valid(Form(email:, age:))
 // }
 
@@ -25,7 +24,7 @@
 // }
 
 // fn validate_email(email: String) -> Validated(String, String) {
-//   use <- v.guard(check_email_format(email))
+//   use _ <- v.guard(check_email_format(email))
 //   check_db_for_email(email)
 // }
 

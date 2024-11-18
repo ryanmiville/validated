@@ -4,8 +4,8 @@
 //// ## Example
 //// ```gleam
 //// fn validate_form(email: String, age: Int) -> Validated(Form, String) {
-////   use email <- v.try(validate_email(email))
-////   use age <- v.try(validate_age(age))
+////   use email <- v.do(validate_email(email))
+////   use age <- v.do(validate_age(age))
 ////   Valid(Form(email:, age:))
 //// }
 ////
@@ -70,16 +70,16 @@ pub fn is_invalid(validated: Validated(a, e)) -> Bool {
 /// ## Examples
 ///
 /// ```gleam
-/// use a <- try(Valid(1))
-/// use b <- try(Valid(2))
+/// use a <- do(Valid(1))
+/// use b <- do(Valid(2))
 /// Valid(#(a, b))
 /// // -> Valid(#(1, 2))
 /// ```
 ///
 /// ```gleam
-/// use a <- try(Invalid(0, [Nil]))
-/// use b <- try(Valid(2))
-/// use c <- try(Invalid(0, [Nil]))
+/// use a <- do(Invalid(0, [Nil]))
+/// use b <- do(Valid(2))
+/// use c <- do(Invalid(0, [Nil]))
 /// Valid(#(a, b, c))
 /// // -> Invalid(#(0, 2, 0), [Nil, Nil])
 /// ```
@@ -179,29 +179,6 @@ pub fn map_error(
   }
 }
 
-/// "Updates" a `Valid` value by passing its value to a function that yields a `Result`,
-/// converting that `Result` to a `Validated`, and returning the yielded `Validated`. (This may "replace"
-/// the `Valid` with an `Invalid`.)
-///
-/// If the input is an `Invalid` rather than an `Valid`, the function is still called using the default
-/// value from the `Invalid`. If the function succeeds, the `Invalid`'s default is replaced with the `Ok` value.
-/// If the function fails, the first `Invalid` errors are combined with the returned `Error`, and the default value
-/// is replaced with the provided default.
-pub fn try_map(
-  validated: Validated(a, e),
-  default: b,
-  f: fn(a) -> Result(b, e),
-) -> Validated(b, e) {
-  case validated {
-    Valid(a) ->
-      case f(a) {
-        Ok(b) -> Valid(b)
-        Error(e) -> Invalid(default, [e])
-      }
-    Invalid(_, errors) -> Invalid(default, errors)
-  }
-}
-
 /// Combines the two `Validated` values.
 /// If both are `Valid`, v2 is returned.
 /// If there are any errors, `Invalid` is returned with all the errors
@@ -291,6 +268,8 @@ pub fn replace(validated: Validated(a, e), value: b) -> Validated(b, e) {
   }
 }
 
+/// Like `do`, but does not continue accumulating further errors if the
+/// `Validated` is `Invalid`.
 pub fn guard(
   validated: Validated(a, e),
   default: b,
@@ -299,5 +278,18 @@ pub fn guard(
   case validated {
     Valid(a) -> continue(a)
     Invalid(_, e) -> Invalid(default, e)
+  }
+}
+
+/// Like `guard` but accepts a callback for the default value in case the
+/// `Validated` is `Invalid`.
+pub fn lazy_guard(
+  validated: Validated(a, e),
+  default: fn() -> b,
+  continue: fn(a) -> Validated(b, e),
+) -> Validated(b, e) {
+  case validated {
+    Valid(a) -> continue(a)
+    Invalid(_, e) -> Invalid(default(), e)
   }
 }
