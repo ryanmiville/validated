@@ -1,4 +1,4 @@
-import gleam/regex
+import gleam/regexp
 
 pub type Form {
   Form(
@@ -54,8 +54,8 @@ fn match(
   pattern: String,
   error_message: String,
 ) -> Result(String, String) {
-  let assert Ok(re) = regex.from_string(pattern)
-  case regex.check(re, s) {
+  let assert Ok(re) = regexp.from_string(pattern)
+  case regexp.check(re, s) {
     True -> Ok(s)
     False -> Error(error_message)
   }
